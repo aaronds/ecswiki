@@ -1,0 +1,13 @@
+<h1>Group: {{_id}}</h1>
+<h2>{{name}}</h2>
+{{>Common/error}}
+{{#keys}}
+	<dl>
+		<dt>Public Key</dt>
+		<dd>{{public}}</dd>
+	</dl>
+{{/keys}}
+<p>
+	<a class = "btn btn-default" href = "#/Group/invite/{{_id}}">Invite</a>
+	<a class = "btn btn-default" href = "#/Group/changePassword/{{_id}}">Change Password</a>
+</p>

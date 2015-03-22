@@ -1,0 +1,21 @@
+<h1>Groups</h1>
+{{>Common/error}}
+<table class = "table">
+	<thead>
+		<tr>
+			<th>Id</th>
+			<th>Name</th>
+		</tr>
+	</thead>
+	<tbody>
+		{{#groups}}
+			<tr>
+				<td><a href = "#/Group/view/{{_id}}">{{_id}}</a></td>
+				<td>{{name}}</td>
+			</tr>
+		{{/groups}}
+	</tbody>
+</table>
+<p>
+	<a class = "btn btn-default" href = "#/Group/create">Create</a>
+</p>

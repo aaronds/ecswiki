@@ -1,0 +1,256 @@
+<!doctype html>
+<html>
+	<head>
+		<link rel="stylesheet" href="ext/bootstrap/css/bootstrap.min.css" />
+		<script type = "text/javascript" src = "ext/jquery.min.js"></script>
+		<script type = "text/javascript" src = "ext/bootstrap/js/bootstrap.min.js"></script>
+		<script type = "text/javascript" src = "ext/marked.min.js"></script>
+		<script type = "text/javascript" src = "ext/async.js"></script>
+		<script type = "text/javascript" src = "ext/ecc.js"></script>
+		<script type = "text/javascript" src = "ext/mustache.min.js"></script>
+		<script type = "text/javascript" src = "ext/sammy/sammy.js"></script>
+		<script type = "text/javascript" src = "ext/sammy/plugins/sammy.mustache.js"></script>
+		<script type = "text/javascript" src = "ext/sammy/plugins/sammy.nested_params.js"></script>
+		<script type = "text/javascript" src = "ext/PorterStemmer1980.min.js"></script>
+		<script type = "text/javascript" src = "ext/require.js"></script>
+		<style type = "text/css">
+			.markdown-full {
+				height: 30em;
+				margin-bottom: 1em;
+			}
+
+			.markdown-form {
+				height: 10em;
+			}
+		</style>
+	</head>
+	<body>
+		<nav class = "navbar navbar-default" role = "navigation">
+			<div class = "container-fluid">
+				<div class = "navbar-header">
+					<a class = "navbar-brand" href = "#Home">Wiki</a>
+				</div>
+				<form id = "searchForm" class = "navbar-form navbar-right" method = "post" action = "#/Wiki/search">
+					<div class = "form-group">
+						<input id = "search" type = "text" class = "form-control" name = "query" value = "" placeholder = "Search" />
+					</div>
+					<button type = "submit" class = "btn btn-default">Search</button>
+				</form>
+				<ul class = "nav navbar-nav navbar-right">
+					<li><a class = "" href = "#/Group/list">Groups</a></li>
+					<li><a class = "" href = "#/Message/inbox">Inbox</a></li>
+					<li>
+						<a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">User</a>
+						<ul class = "dropdown-menu" role = "menu">
+							<li><a href = "#/User/login">Login</a></li>
+							<li><a href = "#/User/logout">Logout</a></li>
+							<li><a href = "#/User/changePassword">Change Password</a></li>
+						</ul>
+					</li>
+				</ul>
+			</div>
+		</nav>
+		<div class = "container-fluid">
+			<div class = "row">
+				<div id = "content" class = "col-md-12">
+					WORLD
+				</div>
+			</div>
+		</div>
+		<script type = "text/javascript">
+			var controllerContext = null,
+				app = null,
+				pathParts = null,
+				dbParts = null,
+				sessionUser = null,
+				designReq = null;
+			
+			controllerContext = {
+				ecc : ecc,
+				async : async,
+				jQuery : jQuery,
+				sjcl : ecc.sjcl,
+				JSON : JSON,
+				session : {},
+				sessionStorage : typeof sessionStorage != "undefined" ? sessionStorage : null,
+				marked : marked,
+				stemmer : stemmer
+			};
+
+			if (typeof sessionStorage == "object") {
+				try {
+					sessionUser = JSON.parse(sessionStorage.getItem("user"));
+					controllerContext.user = sessionUser;
+				} catch (e) {
+				}
+			}
+			
+			jQuery.ajaxSetup({cache : false});
+
+			app = Sammy("#content");
+
+			pathParts = window.location.pathname.split("/");
+			dbParts = pathParts.slice();
+			dbParts.pop();
+
+			designReq = jQuery.get(dbParts.join("/"));
+
+			designReq.done(function (data) {
+				data = JSON.parse(data);
+
+
+				var files = Object.keys(data._attachments).reduce(function (files, file) {
+					if (file.match(/^mustache/)) {
+						files.views.push(file);
+						return files;
+					}
+
+					if (file.match(/^controllers/)) {
+						files.controllers.push(file);
+						return files;
+					}
+
+					return files;
+				}, { views : [], controllers : [] });
+
+				async.parallel(
+					{
+						views : async.map.bind(
+							async,
+							files.views,
+							function (view, fromMap) {
+								var req = jQuery.get(view);
+								req.done(function (data) {
+									return fromMap(null, [view, data]);
+								});
+
+								req.fail(function (err) {
+									return fromMap(err || "Failed");
+								});
+							}
+						),
+						controllers : async.map.bind(
+							async,
+							files.controllers,
+							function (controller, fromMap) {
+								require([controller], function (module) {
+									return fromMap(null, [controller, module]);
+								});
+							}
+						),
+						modules : function (fromModules) {
+							require(
+								[
+									"modules/CouchDb",
+									"modules/SoftAuth",
+									"modules/CryptHelper",
+									"modules/MessageHelper",
+									"modules/KeyStore",
+									"modules/string",
+									"modules/Search"
+								],
+								function (
+									CouchDb,
+									SoftAuth,
+									CryptHelper,
+									MessageHelper,
+									KeyStore,
+									string,
+									Search
+								) {
+									var modules = {
+										CouchDb : CouchDb,
+										SoftAuth : SoftAuth,
+										CryptHelper : CryptHelper,
+										MessageHelper : MessageHelper,
+										KeyStore : KeyStore,
+										Search : Search,
+										string : string
+									};
+
+									return fromModules(null, modules);
+								}
+							);
+						}
+					},
+					function (err, results) {
+						var modules = results.modules,
+							controllers = results.controllers,
+							views = results.views;
+
+						if (err) {
+							return console.warn(err);
+						}
+
+						controllerContext.string = modules.string;
+
+						controllerContext.documentStore = new (modules.CouchDb)(controllerContext);
+
+						controllerContext.views = views.reduce(function (views, result) {
+							var name = result[0].replace(/\.mustache$/,"").replace(/^mustache\//,"");
+
+							views[name] = result[1];
+							app.templateCache(name, result[1]);
+
+							return views;	
+						}, {});
+
+						controllerContext.makeRender = function (context) {
+							return function (view, data) {
+								data.partials = controllerContext.views;
+								return context.partial(view, data);
+							}
+						}
+
+						controllerContext.auth = new (modules.SoftAuth)(controllerContext);
+						controllerContext.keyStore = new (modules.KeyStore)(controllerContext);
+						controllerContext.cryptHelper = new (modules.CryptHelper)(controllerContext);
+						controllerContext.messageHelper = new (modules.MessageHelper)(controllerContext);
+						controllerContext.search = new (modules.Search)(controllerContext);
+
+
+
+						controllerContext.processError = function (err) {
+							console.warn(err);
+
+							if (err instanceof Error) {
+								return err.message;
+							}
+
+							return typeof err == "object" ? JSON.stringify(err) : err;
+						};
+
+						controllerContext.controllers = controllers.reduce(function (controllers, result) {
+							var name = null,
+								module = null;
+							
+							name = result[0].split("/").pop().replace(/\.js$/,"");
+							module = result[1];
+
+							controllers[name] = new (module)(controllerContext, app);
+							return controllers;
+						}, {});
+
+						jQuery(function () {
+							app.use("Mustache");
+							app.template_engine = "mustache";
+							app.use(Sammy.NestedParams);
+							app.run("#/User/login");
+
+							jQuery("#searchForm").submit(function (e) {
+								e.preventDefault();
+								window.location = "#/Wiki/search?query=" + encodeURIComponent(jQuery("#search").val());
+							});
+						});
+					}
+				);
+
+				jQuery(document).keyup(function (e) {
+					if (e.which == 27) {
+						jQuery("#search").focus();
+					}
+				});
+			});
+		</script>
+	</body>
+</html>

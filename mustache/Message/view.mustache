@@ -1,0 +1,37 @@
+<h1>{{subject}}</h1>
+{{#error}}<div class = "alert alert-error">{{error}}</div>{{/error}}
+<form method = "post" action = "#/Message/send" class = "form-horizontal">
+	<div class = "form-group">
+		<label class = "col-sm-2 control-label">From</label>
+		<div class = "col-sm-10">
+			{{fromName}} &lt;{{from}}&gt;
+		</div>
+	</div>
+	<div class = "form-group">
+		<label class = "col-sm-2 control-label">To</label>
+		<div class = "col-sm-10">
+			{{toName}} &lt;{{to}}&gt;
+		</div>
+	</div>
+	{{#sections}}
+		<div class = "row">
+			<label class = "col-sm-2 control-label">{{type}}</label>
+			{{#typeMarkdown}}
+				<div class = "col-sm-10">{{{html}}}</div>
+			{{/typeMarkdown}}
+			{{#typeGroup}}
+				<div class = "col-sm-10">{{publicKey}}</div>
+			{{/typeGroup}}
+		</div>
+	{{/sections}}
+	<div class = "row">
+		<textarea name = "message"></textarea>
+		<input type = "hidden" name = "inReplyTo" value = "{{_id}}" />
+		<input type = "hidden" name = "subject" value = "{{#inReplyTo}}{{subject}}{{/inReplyTo}}{{^inReplyTo}}Re: {{subject}}{{/inReplyTo}}" />
+	</div>
+	<div class = "form-group">
+		<div class = "col-sm-offset-2 col-sm-10">
+			<button type = "submit" class = "btn btn-primary">Save</button>
+		</div>
+	</div>
+</form>

@@ -1,0 +1,13 @@
+{{#canEncrypt}}
+	<div class = "form-group">	
+		<label class = "col-sm-2 control-label" for = "">Encryption</label>
+		<div class = "col-sm-10">
+			<select class = "form-control" name = "encrypt">
+				<option value = "">None</option>
+				{{#encryptionOptions}}
+					<option value = "{{value}}" {{#selected}}selected = "selected"{{/selected}}>{{name}}</option>
+				{{/encryptionOptions}}
+			</select>
+		</div>
+	</div>
+{{/canEncrypt}}

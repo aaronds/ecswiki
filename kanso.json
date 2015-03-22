@@ -1,0 +1,22 @@
+{
+	"name" : "ecswiki",
+	"version" : "0.0.2",
+	"description" : "Encrypted Client Side Wiki",
+	"modules" : ["views", "app"],
+	"load" : "app/app",
+	"dependencies" : {
+		"attachments": null,
+		"modules" : null,
+		"properties" : null
+	},
+	"attachments" : [
+		"index.html",
+		"sammy",
+		"views",
+		"controllers",
+		"ext",
+		"modules",
+		"mustache",
+		"stopwords"
+	]
+}

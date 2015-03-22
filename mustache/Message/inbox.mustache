@@ -1,0 +1,21 @@
+<h1>Inbox</h1>
+{{#error}}<div class = "alert alert-error">{{error}}</div>{{/error}}
+<table class = "table">
+	<thead>
+		<tr>
+			<th>Subject</th>
+			<th>From</th>
+			<th>Time</th>
+		</tr>
+	</thead>
+	<tbody>
+		{{#list}}
+			<tr>
+				<td><a href = "#/Message/view/from/{{_id}}">{{subject}}</a></td>
+				<td>{{userName}}</td>
+				<td>{{time}}</td>
+			</tr>
+		{{/list}}
+	</tbody>
+</table>
+<p><a class = "btn" href = "#/Message/outbox">Outbox</a></p>
