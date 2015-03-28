@@ -10,7 +10,9 @@ define([], function () {
 			marked = controllerContext.marked,
 			string = controllerContext.string,
 			search = controllerContext.search,
-			cryptHelper = controllerContext.cryptHelper;
+			cryptHelper = controllerContext.cryptHelper,
+			markedRenderer = null;
+
 	
 		app.get(/#[^\/].*/, function (context) { /* Render a wiki page */
 			var path = window.location.hash.slice(1),
@@ -39,8 +41,14 @@ define([], function () {
 					return wfNext(null, doc);
 				}],
 				function (err, doc) {
+					var makredRenderer = null;
+
 					if (err) {
 						if (err.error && err.error == "not_found") {
+							if (path.match(/Wiki\/create/)) {
+								throw new Exception("Redirect loop");
+							}
+
 							return context.redirect("#/Wiki/create/" + path);
 						}
 
@@ -52,11 +60,18 @@ define([], function () {
 						);
 					}
 
+					markedRenderer = buildRenderer(doc, path); 
+
 					render(
 						"Wiki/content",
 						{
 							path : path,
-							content : marked(doc.content)
+							content : marked(
+								doc.content,
+								{
+									renderer : markedRenderer
+								}
+							)
 						}
 					);
 				}
@@ -100,7 +115,7 @@ define([], function () {
 						return render(
 							"Wiki/content",
 							{ 
-								error : typeof err == "object" ? JSON.stringify(err) : err
+								error : processError(err)
 							}
 						);
 					}
@@ -194,6 +209,211 @@ define([], function () {
 				}
 			);
 		});
+		
+		app.get(/#\/Wiki\/editSection\/[^\/]*\/.*/, function (context) {
+			var body = context.params,
+				path = window.location.hash.slice(1),
+				pathParts = null,
+				render = makeRender(context),
+				section = null,
+				markerMatch = null,
+				marker = null;
+
+
+			path = path.replace(/\/Wiki\/editSection\//,"");
+			pathParts = path.split(/\//);
+			section = decodeURIComponent(pathParts.shift()).trim();
+			path = pathParts.join("/");
+			
+			async.waterfall([
+				documentStore.get.bind(
+					documentStore,
+					path
+				),
+				function (doc, wfNext) {
+					var	sectionText = null,
+						sectionName = null,
+						sectionLevel = getSectionLevel(section),
+						lineSectionLevel = null,
+						lines = [],
+						start = 0,
+						end = 0,
+						textAfter = null;
+
+					if (!doc.type || doc.type != "Page") {
+						return wfNext("Document not a wiki page");
+					}
+
+					sectionName = section.substring(sectionLevel);
+
+					try {
+						doc = cryptHelper.decrypt(doc);
+					} catch (e) {
+						return wfNext(e);
+					}
+
+					lines = doc.content.split("\r\n");
+
+					for (start = 0; start < lines.length; start++) {
+						var lineSectionLevel = getSectionLevel(lines[start]);
+						if (lineSectionLevel === sectionLevel && lines[start].substring(sectionLevel).trim() == sectionName) {
+							break;
+						}
+					}
+
+					for (end = start + 1; end < lines.length; end++) {
+						lineSectionLevel = getSectionLevel(lines[end]);
+
+						if (lineSectionLevel && lineSectionLevel <= sectionLevel) {
+							break;
+						}	
+					}
+
+					sectionText = lines.slice(start, end);
+
+					return wfNext(null, doc, sectionText);
+
+				}],
+				function (err, doc, sectionText) {
+					var data = null,
+						sectionHash = null;
+
+					if (err) {
+						return render(
+							"Wiki/editSection",
+							{
+								path : path,
+								title : path.split(/[_\-\/]+/g).join(" "),
+								section : encodeURIComponent(section),
+								error : processError(err)
+							}
+						);
+					}
+
+					sectionHash = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sectionText));
+
+					return render(
+						"Wiki/editSection",
+						{
+							_id : doc._id,
+							_rev : doc._rev,
+
+							path : path,
+							title : doc._id.split(/[_\-\/]+/g).join(" "),
+							sectionTitle : section.replace(/#+/g,"").split(/[_\-\/]+/g).join(" "), 
+							sectionHash : sectionHash,
+							markdown : sectionText
+						}
+					);
+				}
+			);
+		});
+		
+		app.post(/#\/Wiki\/editSection\/[^\/]*\/.*/, function (context) {
+			var body = context.params,
+				path = window.location.hash.slice(1),
+				pathParts = null,
+				render = makeRender(context),
+				section = null,
+				markerMatch = null,
+				marker = null;
+
+
+			path = path.replace(/\/Wiki\/editSection\//,"");
+			pathParts = path.split(/\//);
+			section = decodeURIComponent(pathParts.shift()).trim();
+			path = pathParts.join("/");
+			
+			async.waterfall([
+				documentStore.get.bind(
+					documentStore,
+					path
+				),
+				function (doc, wfNext) {
+					var	sectionText = null,
+						sectionName = null,
+						sectionLevel = getSectionLevel(section),
+						hash = null,
+						lineSectionLevel = null,
+						lines = [],
+						start = 0,
+						end = 0,
+						textAfter = null;
+
+					if (!doc.type || doc.type != "Page") {
+						return wfNext("Document not a wiki page");
+					}
+
+					sectionName = section.substring(sectionLevel);
+
+					try {
+						doc = cryptHelper.decrypt(doc);
+					} catch (e) {
+						return wfNext(e);
+					}
+
+					lines = doc.content.split("\r\n");
+
+					for (start = 0; start < lines.length; start++) {
+						var lineSectionLevel = getSectionLevel(lines[start]);
+						if (lineSectionLevel === sectionLevel && lines[start].substring(sectionLevel).trim() == sectionName) {
+							break;
+						}
+					}
+
+					for (end = start + 1; end < lines.length; end++) {
+						lineSectionLevel = getSectionLevel(lines[end]);
+
+						if (lineSectionLevel && lineSectionLevel <= sectionLevel) {
+							break;
+						}	
+					}
+
+					sectionText = lines.slice(start, end);
+
+					hash = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sectionText));
+
+					if (!body.override && hash != body.hash) {
+						return wfNext("Section content has changed");
+					}
+
+					return wfNext(null, doc, sectionText);
+
+				}],
+				function (err, doc, sectionText) {
+					var data = null,
+						sectionHash = null;
+
+					if (err) {
+						return render(
+							"Wiki/editSection",
+							{
+								path : path,
+								title : path.split(/[_\-\/]+/g).join(" "),
+								section : encodeURIComponent(section),
+								error : processError(err)
+							}
+						);
+					}
+
+					sectionHash = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sectionText));
+
+					return render(
+						"Wiki/editSection",
+						{
+							_id : doc._id,
+							_rev : doc._rev,
+
+							path : path,
+							title : doc._id.split(/[_\-\/]+/g).join(" "),
+							sectionTitle : section.replace(/#+/g,"").split(/[_\-\/]+/g).join(" "), 
+							sectionHash : sectionHash,
+							markdown : sectionText
+						}
+					);
+				}
+			);
+		})
 		
 		app.get(/#\/Wiki\/create\/.*/, function (context) {
 			var path = window.location.hash.slice(1),
@@ -292,6 +512,55 @@ define([], function () {
 			);
 		});
 
+		app.get("#/Wiki/import", function (context) {
+			var	render = makeRender(context);
+
+			return render("Wiki/import",{});
+		});
+
+		app.post("#/Wiki/import", function (context) {
+			var	render = makeRender(context),
+				body = context.params;
+
+			async.waterfall([
+				function (wfNext) {
+					var pageData = null;
+
+					try {
+						pageData = JSON.parse(body.data);
+					} catch (e) {
+						return wfNext(e);
+					}
+
+					async.mapSeries(
+						pageData.pages,
+						function (page, fromMap) {
+							if (page.encryption) {
+								page = cryptHelper.encrypt(page, page.encryption.key);
+							}
+
+							documentStore.put(
+								page._id,
+								page,
+								fromMap
+							);
+						},
+						wfNext
+					);
+				}],
+				function (err, result) {
+					if (err) {
+						return render(
+							"Wiki/import",
+							{
+								error : processError(err)
+							}
+						);
+					}
+				}
+			);
+		});
+
 		function getEncryptionOptions(selected) {
 
 			return Object.keys(controllerContext.user.privateKeys).map(function (keyId) {
@@ -302,6 +571,48 @@ define([], function () {
 					selected : keyId == selected
 				};
 			});
+		}
+
+		function buildRenderer(doc, path) {
+
+			markedRenderer = new (marked.Renderer)();
+			markedRenderer.heading = function (text, level) {
+				return Mustache.to_html(
+					controllerContext.views["Markdown/heading"],
+					{
+						id : escapedText = text.toLowerCase().replace(/[^\w]+/g, '-'),
+						level : level,
+						text : text,
+						showEdit : level <= 3,
+						path : path,
+						section : encodeURIComponent(markedSection(text, level))
+					},
+					controllerContext.views
+				);
+			}
+
+			return markedRenderer;
+
+			function markedSection(text, level) {
+				var sectionMarker = "",
+					i = 0;
+
+				for (i = 0; i < level; i++) {
+					sectionMarker = sectionMarker + "#";
+				}
+
+				return sectionMarker + text;
+			}
+		}
+					
+		function getSectionLevel(line) {
+			var res = line.match(/^(#+)/);
+
+			if (!res) {
+				return false;
+			}
+
+			return res[1].length;
 		}
 	}
 });

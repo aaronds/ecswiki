@@ -22,6 +22,11 @@
 			.markdown-form {
 				height: 10em;
 			}
+
+			.heading-edit {
+				font-size: small;
+				float: right;
+			}
 		</style>
 	</head>
 	<body>
@@ -74,7 +79,8 @@
 				session : {},
 				sessionStorage : typeof sessionStorage != "undefined" ? sessionStorage : null,
 				marked : marked,
-				stemmer : stemmer
+				stemmer : stemmer,
+				Mustache : Mustache
 			};
 
 			if (typeof sessionStorage == "object") {
