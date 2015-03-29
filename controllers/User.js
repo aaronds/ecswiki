@@ -20,6 +20,7 @@ define([], function () {
 				{ 
 					email : controllerContext.forceUser,
 					redirectAfter : context.params.redirectAfter,
+					saveSession : controllerContext.config.saveSession,
 					forceUser : controllerContext.forceUser ? true : false
 				}
 			);
@@ -271,6 +272,44 @@ define([], function () {
 			sessionStorage.removeItem("user");
 
 			return context.redirect("#/User/login");
+		});
+
+		app.get("#/User/update", function (context) {
+			var userId = (controllerContext.user || {})._id,
+				render = makeRender(context);
+
+			if (!userId && controllerContext.appCache.status == controllerContext.appCache.UPDATEREADY) {
+				controllerContext.appCache.swapCache();
+				return window.location.reload();
+			}
+
+			if (controllerContext.appCache.status != controllerContext.appCache.UPDATEREADY) {
+				context.redirect("#Home");
+			}
+
+			documentStore.get(
+				userId,
+				function (err, user) {
+					if (err) {
+						controllerContext.appCache.swapCache();
+						return window.location.reload();
+					}
+
+					return render(
+						"User/update",
+						{ }
+					);
+				}
+			);
+		});
+
+		app.post("#/User/update", function (context) {
+			if (controllerContext.appCache.status == controllerContext.appCache.UPDATEREADY) {
+				controllerContext.appCache.swapCache();
+				return window.location.reload();
+			} else {
+				context.redirect("#Home");
+			}
 		});
 	}
 });

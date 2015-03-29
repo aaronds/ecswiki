@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html manifest = "cache.manifest">
 	<head>
 		<link rel="stylesheet" href="ext/bootstrap/css/bootstrap.min.css" />
 		<script type = "text/javascript" src = "ext/jquery.min.js"></script>
@@ -82,7 +82,8 @@
 				sessionStorage : typeof sessionStorage != "undefined" ? sessionStorage : null,
 				marked : marked,
 				stemmer : stemmer,
-				Mustache : Mustache
+				Mustache : Mustache,
+				appCache : (window.applicationCache)
 			};
 
 			if (typeof sessionStorage == "object") {
@@ -100,6 +101,10 @@
 			pathParts = window.location.pathname.split("/");
 			dbParts = pathParts.slice();
 			dbParts.pop();
+
+			if (dbParts.length < 2) {
+				dbParts = ["_design", "ecswiki"];
+			}
 
 			designReq = jQuery.get(dbParts.join("/"));
 
@@ -198,7 +203,13 @@
 
 							getJson(
 								softAuth.user.url,
-								toSoftAuth
+								function (err, softUser) {
+									if (err) {
+										return toSoftAuth(null, null);
+									}
+
+									return toSoftAuth(null, softUser);
+								}
 							);
 						}
 					},
@@ -213,10 +224,12 @@
 						}
 
 						if (softAuth) {
-							controllerContext.user = {
-								_id : resolvePath(softAuth, config.softAuth.user.id),
-								name : resolvePath(softAuth, config.softAuth.user.name)
-							};
+							if (!controllerContext.user) {
+								controllerContext.user = {
+									_id : resolvePath(softAuth, config.softAuth.user.id),
+									name : resolvePath(softAuth, config.softAuth.user.name)
+								};
+							}
 
 							controllerContext.forceUser = controllerContext.user._id;
 						}
@@ -277,15 +290,31 @@
 						}
 
 						jQuery(function () {
+							var appCacheTimer = null,
+								appCache = controllerContext.appCache;
+
 							app.use("Mustache");
 							app.template_engine = "mustache";
 							app.use(Sammy.NestedParams);
-							app.run("#/User/login");
+							app.run("#Home");
 
 							jQuery("#searchForm").submit(function (e) {
 								e.preventDefault();
 								window.location = "#/Wiki/search?query=" + encodeURIComponent(jQuery("#search").val());
 							});
+
+							if (appCache) {
+								aptCacheTimer = setInterval(testForUpdate, 10000);
+
+								function testForUpdate() {
+									if (appCache.status == appCache.UPDATEREADY) {
+										clearInterval(aptCacheTimer);
+										window.location = "#/User/update";
+									}
+								}
+
+								testForUpdate();
+							}
 						});
 					}
 				);

@@ -1,5 +1,6 @@
 exports.config = {
 	name : "EC Wiki",
+	saveSession : false,
 	softAuth : {
 		user : {
 			url : "/_user",
@@ -23,8 +24,23 @@ exports.config = {
 			href : "#Test 2",
 			title : "Test 2"
 		}
-	]
+	],
+	documentStore : {
+		database : "database",
+		design : "ecswiki"
+	}
 };
+
+exports.rewrites = [
+	{ from : "", to : "index.html" },
+	{ from : "cache.manifest", to : "cache.manifest"},
+	{ from : "ext/*", to : "ext/*" },
+	{ from : "modules/*", to : "modules/*" },
+	{ from : "controllers/*", to : "controllers/*" },
+	{ from : "mustache/*", to : "mustache/*" },
+	{ from : "database/*", to : "../../*" },
+	{ from : "*", to : "../../*" }
+]
 
 exports.validate_doc_update = function (newDoc, oldDoc) {
 	var ecc = null,
@@ -3584,6 +3600,10 @@ exports.validate_doc_update = function (newDoc, oldDoc) {
 
 	function compareSignature(a, b) {
 		var i = 0;
+
+		if (!a || !b) {
+			return -1;
+		}
 
 		if (a.length < b.length) {
 			return -1;

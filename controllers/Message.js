@@ -217,6 +217,8 @@ define([], function () {
 					if (message.status == "Verified") {
 						requests.message = function (toMessage) {
 							message.status = "Read";
+
+							message = cryptHelper.sign(message, key); 
 							
 							documentStore.put(
 								message._id,
@@ -226,7 +228,7 @@ define([], function () {
 						}
 					} else {
 						requests.message = function (toMessage) {
-							return toMessage(message);
+							return toMessage(null, message);
 						}
 					}
 

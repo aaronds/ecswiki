@@ -4,34 +4,36 @@
 	<div class = "form-group">
 		<label class = "col-sm-2 control-label">From</label>
 		<div class = "col-sm-10">
-			{{fromName}} &lt;{{from}}&gt;
+			<p class = "form-control-static">{{fromName}} &lt;{{from}}&gt;</p>
 		</div>
 	</div>
 	<div class = "form-group">
 		<label class = "col-sm-2 control-label">To</label>
 		<div class = "col-sm-10">
-			{{toName}} &lt;{{to}}&gt;
+			<p class = "form-control-static">{{toName}} &lt;{{to}}&gt;</p>
 		</div>
 	</div>
 	{{#sections}}
 		<div class = "row">
 			<label class = "col-sm-2 control-label">{{type}}</label>
 			{{#typeMarkdown}}
-				<div class = "col-sm-10">{{{html}}}</div>
+				<div class = "col-sm-10"><p class = "form-control-static">{{{html}}}</p></div>
 			{{/typeMarkdown}}
 			{{#typeGroup}}
-				<div class = "col-sm-10">{{publicKey}}</div>
+				<div class = "col-sm-10"><p class = "form-control-static">{{publicKey}}</p></div>
 			{{/typeGroup}}
 		</div>
 	{{/sections}}
+	<!--
 	<div class = "row">
 		<textarea name = "message"></textarea>
 		<input type = "hidden" name = "inReplyTo" value = "{{_id}}" />
 		<input type = "hidden" name = "subject" value = "{{#inReplyTo}}{{subject}}{{/inReplyTo}}{{^inReplyTo}}Re: {{subject}}{{/inReplyTo}}" />
 	</div>
+	-->
 	<div class = "form-group">
 		<div class = "col-sm-offset-2 col-sm-10">
-			<button type = "submit" class = "btn btn-primary">Save</button>
+			<!-- <button type = "submit" class = "btn btn-primary">Save</button> -->
 		</div>
 	</div>
 </form>

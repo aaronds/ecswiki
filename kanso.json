@@ -11,6 +11,7 @@
 	},
 	"attachments" : [
 		"index.html",
+		"cache.manifest",
 		"views",
 		"controllers",
 		"ext",
