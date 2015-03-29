@@ -15,7 +15,7 @@ define([], function () {
 			markedRenderer = null;
 
 	
-		app.get(/#[^\/].*/, function (context) { /* Render a wiki page */
+		app.get(/#[^\/].*/, function (context) {
 			var path = window.location.hash.slice(1),
 				render = makeRender(context);
 			
@@ -93,7 +93,17 @@ define([], function () {
 								}
 							)
 						}
-					);
+					).then(function () {
+						jQuery(".heading-subsections a").click(function (e) {
+							var toId = null;
+
+							e.preventDefault();
+
+							toId = jQuery(e.target).attr("data-toid");
+
+							jQuery("#" + toId + " .heading-edit a").focus();
+						});
+					});
 				}
 			);
 		});
@@ -158,7 +168,9 @@ define([], function () {
 					render(
 						"Wiki/edit",
 						data
-					);
+					).then(function () {
+						jQuery("#content").focus();
+					});
 				}
 			);
 		});
@@ -324,7 +336,9 @@ define([], function () {
 							sectionHash : sectionHash,
 							markdown : sectionText
 						}
-					);
+					).then(function () {
+						jQuery("#content").focus();
+					});
 				}
 			);
 		});
@@ -585,9 +599,27 @@ define([], function () {
 		}
 
 		function buildRenderer(doc, path) {
+			var lines = doc.content.split("\r\n");
 
 			markedRenderer = new (marked.Renderer)();
 			markedRenderer.heading = function (text, level) {
+				var subSections = [];
+
+				if (level == 1) {
+					subSections = lines.filter(function (line) {
+						return getSectionLevel(line) == 2;
+					});
+
+					subSections = subSections.map(function (section) {
+						var sectionName = section.replace(/\#/g,"").trim();
+						return {
+							name : sectionName,
+							id : sectionName.toLowerCase().replace(/[^\w]+/g, '-')
+						};
+					});
+				}
+
+
 				return Mustache.to_html(
 					controllerContext.views["Markdown/heading"],
 					{
@@ -595,6 +627,8 @@ define([], function () {
 						level : level,
 						text : text,
 						showEdit : level <= 3,
+						subSections : subSections,
+						showSubSections : subSections.length > 2,
 						path : path,
 						section : encodeURIComponent(markedSection(text, level))
 					},

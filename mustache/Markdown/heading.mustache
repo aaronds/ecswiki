@@ -2,3 +2,10 @@
 	{{#showEdit}}<span class = "heading-edit"><a href = "#/Wiki/editSection/{{section}}/{{{path}}}">Edit</a></span>{{/showEdit}}
 	{{text}}
 </h{{level}}>
+{{#showSubSections}}
+	<ol class = "heading-subsections">
+		{{#subSections}}
+			<li><a href = "" data-toid = "{{id}}">{{name}}</a></li>
+		{{/subSections}}
+	</ol>
+{{/showSubSections}}
