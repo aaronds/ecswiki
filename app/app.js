@@ -1,3 +1,31 @@
+exports.config = {
+	name : "EC Wiki",
+	softAuth : {
+		user : {
+			url : "/_user",
+			id : ["email"],
+			name : ["name"]
+		},
+		login : "/_login?url={{url}}"
+	},
+	menus : [	
+		{
+			title : "Test",
+			dropdown : true,
+			submenu : [
+				{
+					href : "#Test_3",
+					title : "Test 3"
+				}
+			]
+		},
+		{
+			href : "#Test 2",
+			title : "Test 2"
+		}
+	]
+};
+
 exports.validate_doc_update = function (newDoc, oldDoc) {
 	var ecc = null,
 		signText = null;

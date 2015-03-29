@@ -15,7 +15,14 @@ define([], function () {
 		app.get("#/User/login", function (context) {
 			var render = makeRender(context);
 
-			return render("User/login", {});
+			return render(
+				"User/login",
+				{ 
+					email : controllerContext.forceUser,
+					redirectAfter : context.params.redirectAfter,
+					forceUser : controllerContext.forceUser ? true : false
+				}
+			);
 		});
 
 		app.post("#/User/login", function (context) {
@@ -81,6 +88,9 @@ define([], function () {
 						return render(
 							"User/login",
 							{
+								email : email || controllerContext.forceUser,
+								redirectAfter : context.params.redirectAfter,
+								forceUser : controllerContext.forceUser,
 								error : processError(err)
 							}
 						);
@@ -99,7 +109,14 @@ define([], function () {
 		app.get("#/User/new", function (context) {
 			var render = makeRender(context);
 
-			return render("User/new", {});
+			return render(
+				"User/new",
+				{ 
+					email : controllerContext.forceUser,
+					name : (controllerContext.user || {}).name,
+					forceUser : controllerContext.forceUser ? true : false
+				}
+			);
 		});
 
 		app.post("#/User/new", function (context) {

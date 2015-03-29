@@ -1,0 +1,12 @@
+{{#menus}}
+	<li>
+		<a {{#dropdown}} class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" {{/dropdown}} {{#href}} href = "{{href}}" {{/href}}>{{title}}</a>
+		{{#dropdown}}
+			<ul class = "dropdown-menu" role = "menu">
+				{{#submenu}}
+					<li><a href = "{{href}}">{{title}}</a>
+				{{/submenu}}
+			</ul>
+		{{/dropdown}}
+	</li>
+{{/menus}}

@@ -33,8 +33,9 @@
 		<nav class = "navbar navbar-default" role = "navigation">
 			<div class = "container-fluid">
 				<div class = "navbar-header">
-					<a class = "navbar-brand" href = "#Home">Wiki</a>
+					<a id = "wiki-logo" class = "navbar-brand" href = "#Home">Wiki</a>
 				</div>
+				<ul id = "custom-nav" class = "nav navbar-nav navbar-left"></ul>
 				<form id = "searchForm" class = "navbar-form navbar-right" method = "post" action = "#/Wiki/search">
 					<div class = "form-group">
 						<input id = "search" type = "text" class = "form-control" name = "query" value = "" placeholder = "Search" />
@@ -68,7 +69,8 @@
 				pathParts = null,
 				dbParts = null,
 				sessionUser = null,
-				designReq = null;
+				designReq = null,
+				documentStore = null;
 			
 			controllerContext = {
 				ecc : ecc,
@@ -102,8 +104,18 @@
 			designReq = jQuery.get(dbParts.join("/"));
 
 			designReq.done(function (data) {
-				data = JSON.parse(data);
+				var data = JSON.parse(data),
+					config = null;
 
+				if (data.config) {
+					config = data.config || {};
+				}
+
+				controllerContext.config = config || {};
+
+				if (config.name) {
+					jQuery("#wiki-logo").text(config.name);
+				}
 
 				var files = Object.keys(data._attachments).reduce(function (files, file) {
 					if (file.match(/^mustache/)) {
@@ -177,20 +189,41 @@
 									return fromModules(null, modules);
 								}
 							);
+						},
+						softAuth : function (toSoftAuth) {
+							var softAuth = (data.config || {}).softAuth;
+							if (!softAuth) {
+								return toSoftAuth(null);
+							}
+
+							getJson(
+								softAuth.user.url,
+								toSoftAuth
+							);
 						}
 					},
 					function (err, results) {
 						var modules = results.modules,
 							controllers = results.controllers,
-							views = results.views;
+							views = results.views,
+							softAuth = results.softAuth;
 
 						if (err) {
 							return console.warn(err);
 						}
 
+						if (softAuth) {
+							controllerContext.user = {
+								_id : resolvePath(softAuth, config.softAuth.user.id),
+								name : resolvePath(softAuth, config.softAuth.user.name)
+							};
+
+							controllerContext.forceUser = controllerContext.user._id;
+						}
+
 						controllerContext.string = modules.string;
 
-						controllerContext.documentStore = new (modules.CouchDb)(controllerContext);
+						controllerContext.documentStore = new (modules.CouchDb)(controllerContext, config.documentStore);
 
 						controllerContext.views = views.reduce(function (views, result) {
 							var name = result[0].replace(/\.mustache$/,"").replace(/^mustache\//,"");
@@ -214,8 +247,6 @@
 						controllerContext.messageHelper = new (modules.MessageHelper)(controllerContext);
 						controllerContext.search = new (modules.Search)(controllerContext);
 
-
-
 						controllerContext.processError = function (err) {
 							console.warn(err);
 
@@ -237,6 +268,14 @@
 							return controllers;
 						}, {});
 
+						if (config.menus) {
+							jQuery("#custom-nav").html(Mustache.to_html(
+								controllerContext.views["Common/menu"],
+								{ menus : config.menus },
+								controllerContext.views
+							));
+						}
+
 						jQuery(function () {
 							app.use("Mustache");
 							app.template_engine = "mustache";
@@ -256,6 +295,28 @@
 						jQuery("#search").focus();
 					}
 				});
+
+				function getJson(url, fromGet) {
+					var req = jQuery.get(url);
+
+					req.done(function (data) {
+						return fromGet(null, data);
+					});
+					req.fail(function (err) {
+						return fromGet(err);
+					});
+				}
+
+				function resolvePath(obj, path) {
+					var i = 0,
+						tmp = obj || {};
+
+					for (i = 0; i < path.length; i++) {
+						tmp = tmp[path[i]] || {};
+					}
+
+					return tmp;
+				}
 			});
 		</script>
 	</body>

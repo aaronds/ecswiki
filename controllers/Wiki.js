@@ -11,6 +11,7 @@ define([], function () {
 			string = controllerContext.string,
 			search = controllerContext.search,
 			cryptHelper = controllerContext.cryptHelper,
+			processError = controllerContext.processError,
 			markedRenderer = null;
 
 	
@@ -55,9 +56,28 @@ define([], function () {
 						return render(
 							"Wiki/content",
 							{ 
-								error : typeof err == "object" ? JSON.stringify(err) : err
+								error : processError(err)
 							}
-						);
+						).then(function () {
+							var userId = (controllerContext.user || {})._id;
+
+							if (!err.requiredKey) {
+								return;
+							}
+
+							documentStore.get(
+								userId,
+								function (userErr, user) {
+									if (userErr) {
+										return;
+									}
+
+									if (user._id == err.requiredKey || ((user.groups || {})[err.requiredKey])) {
+										return context.redirect("#/User/login?redirectAfter=" + path);
+									}
+								}
+							);
+						});
 					}
 
 					markedRenderer = buildRenderer(doc, path); 
@@ -269,7 +289,7 @@ define([], function () {
 						}	
 					}
 
-					sectionText = lines.slice(start, end);
+					sectionText = lines.slice(start, end).join("\r\n");
 
 					return wfNext(null, doc, sectionText);
 
@@ -369,18 +389,23 @@ define([], function () {
 						}	
 					}
 
-					sectionText = lines.slice(start, end);
+					sectionText = lines.slice(start, end).join("\r\n");
 
 					hash = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sectionText));
 
-					if (!body.override && hash != body.hash) {
+					if (!body.override && hash != body.sectionHash) {
 						return wfNext("Section content has changed");
 					}
 
-					return wfNext(null, doc, sectionText);
+					doc.content = lines.slice(0, start).concat(body.content.split("\r\n"), lines.slice(end)).join("\r\n");
 
+					if (doc.encryption) {
+						doc = cryptHelper.encrypt(doc, doc.encryption.key);
+					}
+
+					return documentStore.put(doc._id, doc, wfNext);
 				}],
-				function (err, doc, sectionText) {
+				function (err, doc) {
 					var data = null,
 						sectionHash = null;
 
@@ -396,21 +421,7 @@ define([], function () {
 						);
 					}
 
-					sectionHash = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(sectionText));
-
-					return render(
-						"Wiki/editSection",
-						{
-							_id : doc._id,
-							_rev : doc._rev,
-
-							path : path,
-							title : doc._id.split(/[_\-\/]+/g).join(" "),
-							sectionTitle : section.replace(/#+/g,"").split(/[_\-\/]+/g).join(" "), 
-							sectionHash : sectionHash,
-							markdown : sectionText
-						}
-					);
+					return context.redirect("#" + path);
 				}
 			);
 		})
@@ -563,7 +574,7 @@ define([], function () {
 
 		function getEncryptionOptions(selected) {
 
-			return Object.keys(controllerContext.user.privateKeys).map(function (keyId) {
+			return Object.keys(controllerContext.user.privateKeys || {}).map(function (keyId) {
 				key = controllerContext.user.privateKeys[keyId];
 				return {
 					name : keyId,

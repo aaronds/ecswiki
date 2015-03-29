@@ -17,8 +17,8 @@ define([], function () {
 			var render = makeRender(context),
 				user = null;
 
-			if (!auth.isUser()) {
-				return context.redirect("#/User/login");
+			if (!auth.hasPrivateKeys()) {
+				return context.redirect("#/User/login?redirectAfter=/Message/inbox");
 			}
 
 			user = controllerContext.user;
@@ -100,8 +100,8 @@ define([], function () {
 			var render = makeRender(context),
 				user = null;
 
-			if (!auth.isUser()) {
-				return context.redirect("#/User/login");
+			if (!auth.hasPrivateKeys()) {
+				return context.redirect("#/User/login?redirectAfter=/Message/outbox");
 			}
 
 			user = controllerContext.user;

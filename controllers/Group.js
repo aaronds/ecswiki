@@ -18,7 +18,7 @@ define([], function () {
 				myGroups = null;
 
 			if (!auth.hasPrivateKeys()) {
-				return context.redirect("#/User/login");
+				return context.redirect("#/User/login?redirectAfter=/Group/list");
 			}
 
 			myGroups = Object.keys(controllerContext.user.privateKeys).filter(function (keyName) {

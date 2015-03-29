@@ -2,10 +2,13 @@ define(function () {
 
 	return function KeyStore(controllerContext) {
 		this.find = function (keyName, version) {
-			var keys = (controllerContext.user.privateKeys || {})[keyName];
+			var keys = (controllerContext.user.privateKeys || {})[keyName],
+				error = null;
 
 			if (!keys) {
-				throw new Error("You do not have the '" + keyName + "' key.");
+				error = new Error("You do not have the '" + keyName + "' key.");
+				error.requiredKey = keyName;
+				throw error;
 			}
 
 			if (version) {
@@ -14,7 +17,8 @@ define(function () {
 				}).pop();
 
 				if (!key) {
-					throw new Error("You do not have version " + version + " of the '" + keyName + "'");
+					error = new Error("You do not have version " + version + " of the '" + keyName + "'");
+					throw error; 
 				}
 			} else {
 				key = keys.slice().pop();
