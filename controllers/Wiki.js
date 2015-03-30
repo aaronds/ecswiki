@@ -472,7 +472,7 @@ define([], function () {
 			page = {
 				_id : path,
 				type : "Page",
-				content : "#" + path.split(/[_\-\/]+/g).join(" ") + "#"
+				content : "#" + path.split(/[_\-\/]+/g).join(" ") + "\r\n"
 			};
 
 			async.waterfall([
