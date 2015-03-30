@@ -232,6 +232,10 @@
 							}
 
 							controllerContext.forceUser = controllerContext.user._id;
+
+							if (window.localStorage) {
+								window.localStorage.setItem("loginUrl", softAuth.login);
+							}
 						}
 
 						controllerContext.string = modules.string;
@@ -345,6 +349,21 @@
 					}
 
 					return tmp;
+				}
+			});
+
+			designReq.fail(function (err) {
+				var loginUrl = null;
+
+				console.warn(err);
+				if (window.localStorage) {
+					loginUrl = window.localStorage.getItem("loginUrl");
+
+					if (loginUrl) {
+						loginUrl = loginUrl.replace("{{url}}", encodeURIComponent(window.location.toString()));
+
+						window.location = loginUrl;
+					}
 				}
 			});
 		</script>

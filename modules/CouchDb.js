@@ -114,6 +114,7 @@ define(function () {
 				type : "PUT",
 				url : "/" + database + "/" + file,
 				data : JSON.stringify(data),
+				contentType : "application/json",
 				dataType : "application/json"
 			});
 
