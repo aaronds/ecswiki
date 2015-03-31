@@ -86,6 +86,7 @@ define([], function () {
 						"Wiki/content",
 						{
 							path : path,
+							title : (doc._id || "").split(/[_\-\/]+/g).join(" "),
 							content : marked(
 								doc.content,
 								{

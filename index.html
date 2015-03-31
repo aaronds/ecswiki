@@ -109,8 +109,7 @@
 			designReq = jQuery.get(dbParts.join("/"));
 
 			designReq.done(function (data) {
-				var data = null, 
-					config = null;
+				var config = null;
 
 				try {
 					data = JSON.parse(data);
@@ -267,6 +266,15 @@
 
 						controllerContext.makeRender = function (context) {
 							return function (view, data) {
+								var viewParts = null;
+
+								if (data.title) {
+									document.title = data.title;
+								} else if (typeof view == "string" && view.match("/")) {
+									viewParts = view.split("/");
+									document.title = viewParts[0];
+								}
+
 								data.partials = controllerContext.views;
 								return context.partial(view, data);
 							}
@@ -338,7 +346,7 @@
 				);
 
 				jQuery(document).keyup(function (e) {
-					if (e.which == 27) {
+					if (e.shiftKey && e.which == 27) {
 						jQuery("#search").focus();
 					}
 				});
