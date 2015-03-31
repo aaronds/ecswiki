@@ -109,8 +109,22 @@
 			designReq = jQuery.get(dbParts.join("/"));
 
 			designReq.done(function (data) {
-				var data = JSON.parse(data),
+				var data = null, 
 					config = null;
+
+				try {
+					data = JSON.parse(data);
+				} catch (e) {
+					if (window.localStorage) {
+						loginUrl = window.localStorage.getItem("loginUrl");
+
+						if (loginUrl) {
+							loginUrl = loginUrl.replace("{{url}}", encodeURIComponent(window.location.toString()));
+
+							window.location = loginUrl;
+						}
+					}
+				}
 
 				if (data.config) {
 					config = data.config || {};
