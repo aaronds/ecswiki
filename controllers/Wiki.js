@@ -17,10 +17,15 @@ define([], function () {
 	
 		app.get(/#[^\/].*/, function (context) {
 			var path = window.location.hash.slice(1),
-				render = makeRender(context);
+				render = makeRender(context),
+				section = context.params.section;
 			
 			if (!controllerContext.user) {
 				return context.redirect("#/User/login");
+			}
+
+			if (path.match(/\?/)) {
+				path = path.substring(0, path.match(/\?/).index);
 			}
 
 			async.waterfall([
@@ -95,6 +100,13 @@ define([], function () {
 							)
 						}
 					).then(function () {
+						var sectionId = null;
+
+						if (section) {
+							sectionId = getId(section.substring(getSectionLevel(section)));
+							scrollTo(sectionId);
+						}
+
 						jQuery(".heading-subsections a").click(function (e) {
 							var toId = null;
 
@@ -102,8 +114,20 @@ define([], function () {
 
 							toId = jQuery(e.target).attr("data-toid");
 
-							jQuery("#" + toId + " .heading-edit a").focus();
+							scrollTo(toId);
 						});
+
+						function scrollTo(id) {
+							jQuery("html,body").animate(
+								{
+									scrollTop : (jQuery("#" + id).offset() || {}).top
+								},
+								"fast",
+								function () {
+									jQuery("#" + id + " a").focus();
+								}
+							);
+						}
 					});
 				}
 			);
@@ -364,6 +388,7 @@ define([], function () {
 			path = pathParts.join("/");
 
 			sectionLevel = getSectionLevel(section);
+			sectionName = section.substring(sectionLevel);
 
 			async.waterfall([
 				documentStore.get.bind(
@@ -383,7 +408,6 @@ define([], function () {
 						return wfNext("Document not a wiki page");
 					}
 
-					sectionName = section.substring(sectionLevel);
 
 					try {
 						doc = cryptHelper.decrypt(doc);
@@ -440,7 +464,7 @@ define([], function () {
 						);
 					}
 
-					return context.redirect("#" + path + "?section=section");
+					return context.redirect("#" + path + "?section=" + encodeURIComponent(section));
 				}
 			);
 		})
@@ -628,16 +652,27 @@ define([], function () {
 				return Mustache.to_html(
 					controllerContext.views["Markdown/heading"],
 					{
-						id : escapedText = text.toLowerCase().replace(/[^\w]+/g, '-'),
+						id : escapedText = getId(text),
 						level : level,
 						text : text,
-						showEdit : level <= 3,
+						showEdit : level <= 2,
+						addHr : level <= 2,
 						subSections : subSections,
 						showSubSections : subSections.length > 2,
 						path : path,
 						section : encodeURIComponent(markedSection(text, level))
 					},
 					controllerContext.views
+				);
+			}
+
+			markedRenderer.table = function (header, body) {
+				return Mustache.to_html(
+					controllerContext.views["Markdown/table"],
+					{
+						header : header,
+						body : body
+					}
 				);
 			}
 
@@ -653,6 +688,10 @@ define([], function () {
 
 				return sectionMarker + text;
 			}
+		}
+
+		function getId(text) {
+			return text.toLowerCase().replace(/[^\w]+/g, '-');
 		}
 					
 		function getSectionLevel(line) {
