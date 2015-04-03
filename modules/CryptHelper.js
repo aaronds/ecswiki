@@ -31,7 +31,7 @@ define(function () {
 				throw new Error("I don't know how to sign a '" + type + "'");
 			}
 
-			if (typeof key == "string") {
+			if (key && typeof key == "string") {
 				key = keyStore.find(key, version);
 			}
 
@@ -116,6 +116,10 @@ define(function () {
 						typeof doc[field] == "object" ? JSON.stringify(doc[field]) : doc[field]
 					);
 				});
+			} else {
+				delete doc['encryption'];
+				delete doc['publicKey'];
+				delete doc['salt'];
 			}
 
 			if (previousKey || key) {

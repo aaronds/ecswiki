@@ -98,7 +98,7 @@ define(function () {
 		}
 
 		function get(path, fn) {
-			var req = jQuery.getJSON("/" + database + "/" + path);
+			var req = jQuery.getJSON("/" + database + "/" + encodeURIComponent(path));
 
 			function success(data) {
 				return fn(null, data);
@@ -112,7 +112,7 @@ define(function () {
 		function put(file, data, fn) {
 			var req = jQuery.ajax({
 				type : "PUT",
-				url : "/" + database + "/" + file,
+				url : "/" + database + "/" + encodeURIComponent(file),
 				data : JSON.stringify(data),
 				contentType : "application/json",
 				dataType : "application/json"
