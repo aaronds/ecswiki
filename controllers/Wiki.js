@@ -338,7 +338,10 @@ define([], function () {
 							markdown : sectionText
 						}
 					).then(function () {
-						jQuery("#content").focus();
+						var contentEl = jQuery("#contentInput").get(0),
+							range = null;
+
+						setSelection(contentEl);
 					});
 				}
 			);
@@ -351,23 +354,24 @@ define([], function () {
 				render = makeRender(context),
 				section = null,
 				markerMatch = null,
-				marker = null;
-
+				marker = null,
+				sectionName = null,
+				sectionLevel = null;
 
 			path = path.replace(/\/Wiki\/editSection\//,"");
 			pathParts = path.split(/\//);
 			section = decodeURIComponent(pathParts.shift()).trim();
 			path = pathParts.join("/");
-			
+
+			sectionLevel = getSectionLevel(section);
+
 			async.waterfall([
 				documentStore.get.bind(
 					documentStore,
 					path
 				),
 				function (doc, wfNext) {
-					var	sectionText = null,
-						sectionName = null,
-						sectionLevel = getSectionLevel(section),
+					var sectionText = null,
 						hash = null,
 						lineSectionLevel = null,
 						lines = [],
@@ -436,7 +440,7 @@ define([], function () {
 						);
 					}
 
-					return context.redirect("#" + path);
+					return context.redirect("#" + path + "?section=section");
 				}
 			);
 		})
@@ -659,6 +663,22 @@ define([], function () {
 			}
 
 			return res[1].length;
+		}
+
+		function setSelection(contentEl, start, end) {
+			contentEl.focus();
+			start = start || 0;
+			end = end || 0;
+
+			if (contentEl.setSelectionRange) {
+				contentEl.setSelectionRange(start, end);
+			} else if (contentEl.createTextRange) {
+				range = contentEl.createTextRange();
+				range.collapse(true);
+				range.moveEnd('character', start);
+				range.moveStart('character', end);
+				range.select();
+			}
 		}
 	}
 });

@@ -3,7 +3,7 @@
 {{>Common/error}}
 <form class = "form-horizontal" method = "post" action = "#/Wiki/editSection/{{section}}/{{path}}">
 	<div class = "row">
-		<textarea id = "content" name = "content" class = "col-sm-12 markdown-full">{{markdown}}</textarea>
+		<textarea id = "contentInput" name = "content" class = "col-sm-12 markdown-full">{{markdown}}</textarea>
 		<input type = "hidden" name = "sectionHash" value = "{{sectionHash}}" />
 	</div>
 	<div class = "form-group">	
