@@ -28,6 +28,21 @@ exports.config = {
 	documentStore : {
 		database : "database",
 		design : "ecswiki"
+	},
+	urlEncryption : {
+		key : "sample@test.com",
+		version : 1,
+		sjcl : {
+			"iv":"CXCtdUGhTDrIsn70djhFiw==",
+			"v":1,
+			"iter":1000,
+			"ks":128,
+			"ts":64,
+			"mode":"ccm",
+			"adata":"",
+			"cipher":"aes",
+			"salt":"S0pxtFyieew="
+		}
 	}
 };
 

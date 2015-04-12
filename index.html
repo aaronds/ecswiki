@@ -94,8 +94,6 @@
 				}
 			}
 			
-			jQuery.ajaxSetup({cache : false});
-
 			app = Sammy("#content");
 
 			pathParts = window.location.pathname.split("/");
@@ -134,6 +132,8 @@
 				if (config.name) {
 					jQuery("#wiki-logo").text(config.name);
 				}
+
+
 
 				var files = Object.keys(data._attachments).reduce(function (files, file) {
 					if (file.match(/^mustache/)) {
@@ -183,7 +183,8 @@
 									"modules/MessageHelper",
 									"modules/KeyStore",
 									"modules/string",
-									"modules/Search"
+									"modules/Search",
+									"modules/EncryptedUrlStore"
 								],
 								function (
 									CouchDb,
@@ -192,7 +193,8 @@
 									MessageHelper,
 									KeyStore,
 									string,
-									Search
+									Search,
+									EncryptedUrlStore
 								) {
 									var modules = {
 										CouchDb : CouchDb,
@@ -201,7 +203,8 @@
 										MessageHelper : MessageHelper,
 										KeyStore : KeyStore,
 										Search : Search,
-										string : string
+										string : string,
+										EncryptedUrlStore : EncryptedUrlStore
 									};
 
 									return fromModules(null, modules);
@@ -249,6 +252,17 @@
 							if (window.localStorage) {
 								window.localStorage.setItem("loginUrl", softAuth.login);
 							}
+						}
+
+						controllerContext.getId = function(id) {
+							return id;
+						}
+						
+						if (config.urlEncryption) {
+							controllerContext.wikiDocumentStore = new (modules.EncryptedUrlStore)(controllerContext, config.documentStore);
+							jQuery("#searchForm").hide();
+							jQuery(".navbar-right").hide();
+							controllerContext.getId = controllerContext.wikiDocumentStore.getId.bind(controllerContext.wikiDocumentStore);
 						}
 
 						controllerContext.string = modules.string;

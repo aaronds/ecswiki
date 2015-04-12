@@ -2,7 +2,7 @@ define([], function () {
 
 	return function (controllerContext, app) {
 		var makeRender = controllerContext.makeRender,
-			documentStore = controllerContext.documentStore,
+			documentStore = controllerContext.wikiDocumentStore || controllerContext.documentStore,
 			keyStore = controllerContext.keyStore,
 			ecc = controllerContext.ecc,
 			sjcl = controllerContext.sjcl,

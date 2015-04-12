@@ -8,13 +8,14 @@ define(function () {
 			documentStore = controllerContext.documentStore,
 			async = controllerContext.async,
 			sjcl = ecc.sjcl,
-			cryptHelper = this;
+			cryptHelper = this,
+			getId = controllerContext.getId;
 
 		this.signatureFields = {
-			"User" : ["_id", "_deleted", "privateKeys", "publicKey", "salt", "type"],
-			"Group" : ["_id", "_deleted", "privateKeys", "publicKey", "salt", "type"],
-			"Page" : ["_id", "_deleted", "content", "publicKey", "salt", "type"],
-			"Message" : ["_id", "_deleted", "publicKey", "messageKey", "sections", "status", "to", "from", "subject", "timestamp", "type"]
+			"User" : ["_deleted", "privateKeys", "publicKey", "salt", "type"],
+			"Group" : ["_deleted", "privateKeys", "publicKey", "salt", "type"],
+			"Page" : ["_deleted", "content", "publicKey", "salt", "type"],
+			"Message" : ["_deleted", "publicKey", "messageKey", "sections", "status", "to", "from", "subject", "timestamp", "type"]
 		};
 
 		this.encryptFields = {
@@ -42,12 +43,12 @@ define(function () {
 			if (previousKey) {
 				doc.signature = ecc.sign(
 					previousKey.private,
-					signFields.reduce(string.concatFrom(doc), "")
+					signFields.reduce(string.concatFrom(doc), getId(doc._id))
 				);
 			} else if (key) {
 				doc.signature = ecc.sign(
 					key.private,
-					signFields.reduce(string.concatFrom(doc), "")
+					signFields.reduce(string.concatFrom(doc), getId(doc._id))
 				);
 			}
 			
@@ -66,7 +67,7 @@ define(function () {
 
 			doc.authorSignature = ecc.sign(
 				key.private,
-				signFields.reduce(string.concatFrom(doc), "")
+				signFields.reduce(string.concatFrom(doc), getId(doc._id))
 			);
 
 			return doc;
