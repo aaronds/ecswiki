@@ -3603,7 +3603,7 @@ exports.validate_doc_update = function (newDoc, oldDoc) {
 
 	signText = newDoc.signatureFields.reduce(function (signText, field) {
 		return signText + newDoc[field];
-	},doc._id);
+	},newDoc._id);
 
 	if (newDoc.signatureFields.indexOf("_deleted") < 0) {
 		throw new Error("Rejecting signature fields");
