@@ -79,7 +79,7 @@ define(function () {
 			return ecc.verify(
 				author.publicKey,
 				doc.authorSignature,
-				signFields.reduce(string.concatFrom(doc), "")
+				signFields.reduce(string.concatFrom(doc), getId(doc._id))
 			);
 		}
 
