@@ -12,6 +12,8 @@ define([], function () {
 			search = controllerContext.search,
 			cryptHelper = controllerContext.cryptHelper,
 			processError = controllerContext.processError,
+			commonMetaData = controllerContext.commonMetaData,
+			config = controllerContext.config,
 			markedRenderer = null;
 
 	
@@ -164,7 +166,8 @@ define([], function () {
 				}],
 				function (err, doc) {
 					var data = null,
-						keyName = null;
+						keyName = null,
+						metaDataFields = [];
 
 					if (err) {	
 						return render(
@@ -175,15 +178,20 @@ define([], function () {
 						);
 					}
 
+					metaDataFields = commonMetaData.get(doc); 
+
 					data = {
 						_id : doc._id,
 						_rev : doc._rev,
+						noContent : doc.noContent,
 						path : path,
 						title : doc._id.split(/[_\-\/]+/g).join(" "),
-						markdown : doc.content,		
+						markdown : doc.content,	
+						hasMetaData : (metaDataFields || []).length > 0,
+						metaData : metaDataFields
 					};
 
-					if (controllerContext.user.privateKeys) {
+					if (controllerContext.user.privateKeys && !config.disableEncryption) {
 						keyName = (doc.encryption || {}).key;
 
 						data.encryptionOptions = getEncryptionOptions(keyName);	
@@ -230,6 +238,7 @@ define([], function () {
 					}
 
 					doc.content = body.content;
+					doc = commonMetaData.set(doc, body);
 
 					doc = cryptHelper.encrypt(doc, body.encrypt);
 
@@ -473,9 +482,12 @@ define([], function () {
 			var path = window.location.hash.slice(1),
 				render = makeRender(context),
 				encryptionOptions = getEncryptionOptions(),
-				body = context.params;
+				body = context.params,
+				metaDataFields = [];
 
 			path = path.replace(/\/Wiki\/create\//,"");
+			
+			metaDataFields = commonMetaData.get({}); 
 
 			render(
 				"Wiki/create",
@@ -483,7 +495,9 @@ define([], function () {
 					path : path,
 					title : path.split(/[_\-\/]+/g).join(" "),
 					encryptionOptions : encryptionOptions,
-					canEncrypt : encryptionOptions ? true : false
+					canEncrypt : (encryptionOptions && !config.disableEncryption) ? true : false,
+					hasMetaData : (metaDataFields || []).length > 0,
+					metaData : metaDataFields
 				}
 			);
 		});
@@ -507,6 +521,7 @@ define([], function () {
 			async.waterfall([
 				function (wfNext) {
 					page = cryptHelper.encrypt(page, body.encrypt);
+					page = commonMetaData.set(page, body);
 
 					documentStore.put(
 						path,

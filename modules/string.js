@@ -1,5 +1,10 @@
 define(function () {
 	return {
+		upperCaseFirst : function (str) {
+			str = str.toString();
+
+			return str.charAt(0).toUpperCase() + str.slice(1);
+		},
 		concatFrom : function (doc) {
 			return function (text, field) {
 				return text + doc[field];

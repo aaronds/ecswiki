@@ -2,9 +2,10 @@
 {{>Common/error}}
 <form class = "form-horizontal" method = "post" action = "#/Wiki/edit/{{path}}">
 	<div class = "row">
-		<textarea id = "contentInput" name = "content" class = "col-sm-12 markdown-full">{{markdown}}</textarea>
+		<textarea id = "contentInput" name = "content" class = "col-sm-12 markdown-full {{#noContent}} hidden{{/noContent}}">{{markdown}}</textarea>
 		<input type = "hidden" name = "_rev" value = "{{_rev}}" />
 	</div>
+	{{>Wiki/metaData}}
 	{{>Wiki/encryption}}
 	<div class = "form-group">	
 		<label class = "col-sm-2 control-label" for = "">Options</label>

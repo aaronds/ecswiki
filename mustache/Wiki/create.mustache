@@ -1,6 +1,7 @@
 <h1>Create {{title}}</h1>
 {{>Common/error}}
 <form class = "form-horizontal" method = "post" action = "#/Wiki/create/{{path}}">
+	{{>Wiki/metaData}}
 	{{>Wiki/encryption}}
 	<div class = "form-group">
 		<div class = "col-sm-offset-2 col-sm-10">

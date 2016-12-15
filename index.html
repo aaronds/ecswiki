@@ -1,5 +1,5 @@
 <!doctype html>
-<html manifest = "cache.manifest">
+<html notmanifest = "cache.manifest">
 	<head>
 		<link rel="stylesheet" href="ext/bootstrap/css/bootstrap.min.css" />
 		<script type = "text/javascript" src = "ext/jquery.min.js"></script>
@@ -26,6 +26,10 @@
 			.heading-edit {
 				font-size: small;
 				float: right;
+			}
+
+			.hidden {
+				display: none;
 			}
 		</style>
 	</head>
@@ -59,7 +63,7 @@
 		<div class = "container-fluid">
 			<div class = "row">
 				<div id = "content" class = "col-md-12">
-					WORLD
+					LOADING
 				</div>
 			</div>
 		</div>
@@ -83,6 +87,7 @@
 				marked : marked,
 				stemmer : stemmer,
 				Mustache : Mustache,
+				metaDataTypes : {},
 				appCache : (window.applicationCache)
 			};
 
@@ -184,7 +189,8 @@
 									"modules/KeyStore",
 									"modules/string",
 									"modules/Search",
-									"modules/EncryptedUrlStore"
+									"modules/EncryptedUrlStore",
+									"modules/CommonMetaData"
 								],
 								function (
 									CouchDb,
@@ -194,7 +200,8 @@
 									KeyStore,
 									string,
 									Search,
-									EncryptedUrlStore
+									EncryptedUrlStore,
+									CommonMetaData
 								) {
 									var modules = {
 										CouchDb : CouchDb,
@@ -204,7 +211,8 @@
 										KeyStore : KeyStore,
 										Search : Search,
 										string : string,
-										EncryptedUrlStore : EncryptedUrlStore
+										EncryptedUrlStore : EncryptedUrlStore,
+										CommonMetaData : CommonMetaData
 									};
 
 									return fromModules(null, modules);
@@ -299,6 +307,8 @@
 						controllerContext.cryptHelper = new (modules.CryptHelper)(controllerContext);
 						controllerContext.messageHelper = new (modules.MessageHelper)(controllerContext);
 						controllerContext.search = new (modules.Search)(controllerContext);
+						controllerContext.commonMetaData = new (modules.CommonMetaData)(controllerContext);
+
 
 						controllerContext.processError = function (err) {
 							console.warn(err);
