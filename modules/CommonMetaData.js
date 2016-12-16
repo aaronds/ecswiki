@@ -9,28 +9,57 @@ define(function () {
 			controllerContext.metaDataTypes = {};
 		}
 
+		function getMetaConfig(config, doc) {
+			var key = null,
+				metaConfig = {},
+				hasMeta = false;
+
+			for (key in config.metaData || {}) {
+				if (config.metaData.hasOwnProperty(key)) {
+					metaConfig[key] = config.metaData[key];
+					hasMeta = true;
+				}
+			}
+
+			for (key in ((doc.config || {}).metaData || {})) {
+				if (doc.config.metaData.hasOwnProperty(key)) {
+					metaConfig[key] = doc.config.metaData[key];
+					hasMeta = true;
+				}
+			}
+
+			if (hasMeta) {
+				return metaConfig;
+			}
+
+			return false;
+		}
+
 		this.get = function (doc) {
 			var metaData = doc.metaData || {},
 				metaDataTypes = controllerContext.metaDataTypes,
-				metaFields = [];
+				metaFields = [],
+				metaConfig = null;
 
-			if (!config.metaData) {
+			metaConfig = getMetaConfig(config, doc);
+
+			if (!metaConfig) {
 				return [];
 			}
 
-			metaFields = Object.keys(config.metaData).map(function (name) {
-				var metaConfig = config.metaData[name],
+			metaFields = Object.keys(metaConfig).map(function (name) {
+				var metaFieldConfig = metaConfig[name],
 					metaValue = metaData[name],
 					metaObject = null;
 
 				metaObject = {
 					name : name,
-					type : metaConfig.type,
-					title : metaConfig.title || string.upperCaseFirst(name),
-					value : metaDataTypes[metaConfig.type].get(metaConfig, doc, name, metaValue)
+					type : metaFieldConfig.type,
+					title : metaFieldConfig.title || string.upperCaseFirst(name),
+					value : metaDataTypes[metaFieldConfig.type].get(metaFieldConfig, doc, name, metaValue)
 				};
 
-				metaObject["type" + string.upperCaseFirst(metaConfig.type)] = true;
+				metaObject["type" + string.upperCaseFirst(metaFieldConfig.type)] = true;
 
 				return metaObject;
 			});
@@ -41,17 +70,20 @@ define(function () {
 		this.set = function (doc, body) {
 			var metaDataBody = body.metaData || {},
 				metaDataTypes = controllerContext.metaDataTypes,
-				metaData = doc.metaData || {};
+				metaData = doc.metaData || {},
+				metaConfig = null;
 
-			if (!config.metaData) {
+			metaConfig = getMetaConfig(config, doc);
+
+			if (!metaConfig) {
 				return doc;
 			}
 
-			Object.keys(config.metaData).forEach(function (name) {
+			Object.keys(metaConfig).forEach(function (name) {
 				var metaDataValue = metaData[name],
-					metaConfig = config.metaData[name];
+					metaFieldConfig = metaConfig[name];
 
-				metaData[name] = metaDataTypes[metaConfig.type].set(metaConfig, doc, name, metaDataValue, metaDataBody[name]);
+				metaData[name] = metaDataTypes[metaFieldConfig.type].set(metaFieldConfig, doc, name, metaDataValue, metaDataBody[name]);
 			});
 
 			doc.metaData = metaData;
@@ -66,6 +98,29 @@ define(function () {
 				return body.value;
 			},
 			bind : function (config, metaEl, el, value) {
+			}
+		};
+		
+		controllerContext.metaDataTypes.date = {
+			get : function (config, doc, name, value) {
+				return value;
+			},
+			set : function (config, doc, name, value, body) {
+				return body.value;
+			}
+		};
+		
+		controllerContext.metaDataTypes.number = {
+			get : function (config, doc, name, value) {
+				return {
+					number : value,
+					max : config.max,
+					min : config.min,
+					step : config.step
+				}
+			},
+			set : function (config, doc, name, value, body) {
+				return body.value;
 			}
 		};
 
