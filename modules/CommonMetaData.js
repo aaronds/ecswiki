@@ -52,6 +52,10 @@ define(function () {
 					metaValue = metaData[name],
 					metaObject = null;
 
+				if (!metaFieldConfig) {
+					return;
+				}
+
 				metaObject = {
 					name : name,
 					type : metaFieldConfig.type,
@@ -62,7 +66,7 @@ define(function () {
 				metaObject["type" + string.upperCaseFirst(metaFieldConfig.type)] = true;
 
 				return metaObject;
-			});
+			}).filter(Boolean);
 
 			return metaFields;
 		}
@@ -82,6 +86,10 @@ define(function () {
 			Object.keys(metaConfig).forEach(function (name) {
 				var metaDataValue = metaData[name],
 					metaFieldConfig = metaConfig[name];
+
+				if (!metaFieldConfig) {
+					return;
+				}
 
 				metaData[name] = metaDataTypes[metaFieldConfig.type].set(metaFieldConfig, doc, name, metaDataValue, metaDataBody[name]);
 			});
@@ -123,6 +131,15 @@ define(function () {
 				return body.value;
 			}
 		};
+
+		controllerContext.metaDataTypes.constant = {
+			get : function (config, doc, name, value) {
+				return value;
+			},
+			set : function (config, doc, name, value, body) {
+				return config.value;
+			}
+		}
 
 		controllerContext.metaDataTypes.createdTimestamp = {
 			get : function (config, doc, name, value) {
