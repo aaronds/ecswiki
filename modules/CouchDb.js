@@ -15,6 +15,53 @@ define(function () {
 
 		this.get = get;
 		this.put = put;
+
+		this.putAttachment = function (doc, fileName, file, fn) {
+			var req = null,
+				type = null;
+
+			if (!fileName) {
+				fileName = file.name;
+			}
+
+			type = file.type;
+		
+			req = jQuery.ajax({
+				type : "PUT",
+				url : "/" + database + "/" + encodeURIComponent(doc._id) + "/" + encodeURIComponent(fileName) + "?rev=" + doc._rev,
+				beforeSend : function (xhr) {
+					xhr.setRequestHeader("Content-Type", type);
+				},
+				processData : false,
+				data : file,
+				contentType : "application/json"
+			});
+
+			function success(res) {
+				if (typeof res == "string") {
+					try {
+						res = JSON.parse(res);
+					} catch (e) {
+					}
+				}
+
+				doc._rev = res.rev;
+				return fn(null, doc);
+			}
+			
+			req.done(success);
+
+			req.fail(rationalizeError(fn, success));
+		}
+
+		this.attachmentUrl = function (doc, path) {
+			if (path.match(/\//)) {
+				return "/" + database + "/" + path;
+			} else {
+				return "/" + database + "/" + doc._id + "/" + path;
+			}
+		}
+
 		this.indexKey = function (name, key, fn) {
 			var req = jQuery.getJSON("/" + database + "/_design/" + design + "/_view/" + name + "?key=" + encodeURIComponent(JSON.stringify(key)) + "&include_docs=true&reduce=false");
 

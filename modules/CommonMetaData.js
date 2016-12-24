@@ -35,13 +35,12 @@ define(function () {
 			return false;
 		}
 
-		this.get = function (doc) {
+		this.get = function (doc, metaConfig) {
 			var metaData = doc.metaData || {},
 				metaDataTypes = controllerContext.metaDataTypes,
-				metaFields = [],
-				metaConfig = null;
+				metaFields = [];
 
-			metaConfig = getMetaConfig(config, doc);
+			metaConfig = metaConfig || getMetaConfig(config, doc);
 
 			if (!metaConfig) {
 				return [];
@@ -71,13 +70,12 @@ define(function () {
 			return metaFields;
 		}
 
-		this.set = function (doc, body) {
+		this.set = function (doc, body, metaConfig) {
 			var metaDataBody = body.metaData || {},
 				metaDataTypes = controllerContext.metaDataTypes,
-				metaData = doc.metaData || {},
-				metaConfig = null;
+				metaData = doc.metaData || {};
 
-			metaConfig = getMetaConfig(config, doc);
+			metaConfig = metaConfig || getMetaConfig(config, doc);
 
 			if (!metaConfig) {
 				return doc;
@@ -128,7 +126,7 @@ define(function () {
 				}
 			},
 			set : function (config, doc, name, value, body) {
-				return body.value;
+				return (body || {}).value;
 			}
 		};
 

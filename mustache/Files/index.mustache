@@ -1,0 +1,36 @@
+<h1>Files</h1>
+<h2>{{title}}</h2>
+{{>Common/error}}
+<table class = "table">
+	<thead>
+		<tr>
+			<th>File</th>
+			<th>Type</th>
+			<th>Size</th>
+		</tr>
+	</thead>
+	<tbody>
+		{{#attachments}}
+			<tr>
+				<td><a href = "#/Files/{{page}}/{{file}}">{{file}}</a></td>
+				<td>{{contentType}}</td>
+				<td>{{length}}</td>
+			</tr>
+		{{/attachments}}
+	</tbody>
+</table>
+<h3>New File</h3>
+<form method = "post" action = "#/Files/{{page}}">
+	<div class = "form-group">
+		<label class = "col-sm-2 control-label" for = "file">File</label>
+		<div class = "col-sm-10">
+			<input class = "form-control" type = "file" name = "file" id = "file" />
+		</div>
+	</div>
+	<div class = "form-group">
+		<div class = "col-sm-offset-2 col-sm-10">
+			<button type = "submit" class = "btn btn-primary">Upload</button>
+			<a href = "#/{{page}}" class = "btn btn-default">Back</a>
+		</div>
+	</div>
+</form>

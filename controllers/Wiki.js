@@ -99,7 +99,8 @@ define([], function () {
 								{
 									renderer : markedRenderer
 								}
-							)
+							),
+							files : config.files ? true : false
 						}
 					).then(function () {
 						var sectionId = null;
@@ -188,7 +189,8 @@ define([], function () {
 						title : doc._id.split(/[_\-\/]+/g).join(" "),
 						markdown : doc.content,	
 						hasMetaData : (metaDataFields || []).length > 0,
-						metaData : metaDataFields
+						metaData : metaDataFields,
+						files : config.files ? true : false
 					};
 
 					if (controllerContext.user.privateKeys && !config.disableEncryption) {
@@ -678,6 +680,26 @@ define([], function () {
 						section : encodeURIComponent(markedSection(text, level))
 					},
 					controllerContext.views
+				);
+			}
+
+			markedRenderer.image = function (href, title, text) {
+
+				if (href && config.files && !href.match(/^(http\:|https\:)/) && href.slice(0, 1) != "/") {
+					href = documentStore.attachmentUrl(doc, href);
+				}
+
+				if ((config.images || {}).deliminator) {
+					href = href.split(config.images.deliminator)[0];
+				}
+
+				return Mustache.to_html(
+					controllerContext.views["Markdown/image"],
+					{
+						href : href,
+						title : title,
+						text : text
+					}
 				);
 			}
 
